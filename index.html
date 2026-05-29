@@ -525,6 +525,15 @@
     transform: scale(1.08);
     box-shadow: 0 0 50px rgba(233,69,96,0.9);
   }
+
+  #persoScore {
+    font-size: clamp(16px, 3.5vw, 26px);
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 2px;
+    text-align: center;
+    text-shadow: 0 0 10px rgba(255,255,255,0.4);
+  }
 </style>
 </head>
 <body>
@@ -543,7 +552,7 @@
   </div>
 
   <!-- HUD -->
-  <div id="hud">🥪 <span id="score">0</span> / 10</div>
+  <div id="hud">🥪 <span id="score">0</span></div>
 
   <!-- UZI FACE -->
   <img id="uzi" src="" alt="Uzi">
@@ -572,6 +581,7 @@
   <!-- MESSAGGIO PANINO PERSO -->
   <div id="messaggioPerso">
     <div class="persoTesto" id="persoTesto"></div>
+    <div id="persoScore"></div>
     <button id="persoRigiocaBtn" onclick="rigioca()">RIGIOCA</button>
   </div>
 
@@ -593,9 +603,9 @@ let personaggioScelto = null;
 // ─── STATE ─────────────────────────────────────────────────────────────────
 const SPEED         = 6;
 const FIRE_INTERVAL = 1200;
-const WIN_COUNT     = 10;
 const OPEN_DIST     = 80;
 const EAT_DIST      = 50;
+const SPEED_INCREMENT = 0.3; // aggiunto ogni 5 panini mangiati
 
 function isMobile()           { return window.innerWidth < 600; }
 function getUziW()            { return isMobile() ? 70 : 80; }
@@ -787,7 +797,7 @@ function gameLoop(now) {
   const W = window.innerWidth;
   const H = window.innerHeight;
   const UZI_W = getUziW();
-  const SANDWICH_SPEED = getSandwichSpeed();
+  const SANDWICH_SPEED = getSandwichSpeed() + Math.floor(score / 5) * SPEED_INCREMENT;
 
   // ── Move Uzi
   if (keys.left)  uziX -= SPEED;
@@ -838,7 +848,6 @@ function gameLoop(now) {
       score++;
       scoreEl.textContent = score;
       playBeep();
-      if (score >= WIN_COUNT) { triggerWin(); return; }
     }
   }
 
@@ -869,6 +878,7 @@ function mostraMessaggioPerso() {
   void testo.offsetWidth;
   testo.style.animation = '';
 
+  document.getElementById('persoScore').textContent = 'Punteggio: ' + score + ' panini mangiati';
   document.getElementById('messaggioPerso').classList.add('show');
 
   // Pulsante RIGIOCA dopo 2 secondi
