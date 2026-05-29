@@ -611,7 +611,7 @@ const SPEED_INCREMENT = 1.0; // aggiunto ogni 5 panini mangiati
 function isMobile()           { return window.innerWidth < 600; }
 function getUziW()            { return isMobile() ? 70 : 80; }
 function getSandwichSpeed()   { return isMobile() ? 14.0 : 5.0; }
-function getPlayerSpeed()     { return SPEED * 2; }
+function getPlayerSpeed()     { return isMobile() ? 8 : 18; }
 function getSandwichFontSize(){ return isMobile() ? '32px' : '38px'; }
 
 function updateTouchControls() {
