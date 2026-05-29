@@ -611,6 +611,7 @@ const SPEED_INCREMENT = 1.0; // aggiunto ogni 5 panini mangiati
 function isMobile()           { return window.innerWidth < 600; }
 function getUziW()            { return isMobile() ? 70 : 80; }
 function getSandwichSpeed()   { return isMobile() ? 14.0 : 5.0; }
+function getPlayerSpeed()     { return SPEED * 2; }
 function getSandwichFontSize(){ return isMobile() ? '32px' : '38px'; }
 
 function updateTouchControls() {
@@ -801,8 +802,9 @@ function gameLoop(now) {
   const SANDWICH_SPEED = getSandwichSpeed() + Math.floor(score / 5) * SPEED_INCREMENT;
 
   // ── Move Uzi
-  if (keys.left)  uziX -= SPEED;
-  if (keys.right) uziX += SPEED;
+  const playerSpeed = getPlayerSpeed();
+  if (keys.left)  uziX -= playerSpeed;
+  if (keys.right) uziX += playerSpeed;
   uziX = Math.max(UZI_W / 2, Math.min(W - UZI_W / 2, uziX));
   uziEl.style.left = uziX + 'px';
 
