@@ -605,11 +605,11 @@ const SPEED         = 6;
 const FIRE_INTERVAL = 1200;
 const OPEN_DIST     = 80;
 const EAT_DIST      = 50;
-const SPEED_INCREMENT = 0.3; // aggiunto ogni 5 panini mangiati
+const SPEED_INCREMENT = 0.6; // aggiunto ogni 5 panini mangiati
 
 function isMobile()           { return window.innerWidth < 600; }
 function getUziW()            { return isMobile() ? 70 : 80; }
-function getSandwichSpeed()   { return isMobile() ? 2.2 : 3.2; }
+function getSandwichSpeed()   { return isMobile() ? 4.4 : 6.4; }
 function getSandwichFontSize(){ return isMobile() ? '32px' : '38px'; }
 
 function updateTouchControls() {
