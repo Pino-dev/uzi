@@ -677,13 +677,13 @@ function gameLoop(now) {
 
   // ── Move sandwiches, check collisions
   const uziCenterX = uziX;
-  const uziCenterY = uziY + UZI_W / 2;  // UZI_W already declared above
+  const uziCenterY = uziY + UZI_W / 2;
+  const sogliaApertura = H * 0.15;
   let mouthOpen = false;
 
-  // first pass: check proximity to decide mouth state
+  // first pass: check proximity to decide mouth state (distanza verticale assoluta)
   for (const s of sandwiches) {
-    const dy = uziCenterY - s.y;
-    if (dy >= 0 && dy <= OPEN_DIST) { mouthOpen = true; break; }
+    if (Math.abs(uziCenterY - s.y) < sogliaApertura) { mouthOpen = true; break; }
   }
 
   uziEl.src = mouthOpen ? personaggioScelto.aperta : personaggioScelto.chiusa;
