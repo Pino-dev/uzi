@@ -469,6 +469,35 @@
     transform: scale(1.08);
     box-shadow: 0 0 50px rgba(233,69,96,0.9);
   }
+
+  /* MESSAGGIO PANINO PERSO */
+  #messaggioPerso {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 900;
+    color: #ff3333;
+    text-shadow: 0 0 20px #ff3333, 0 0 40px #ff3333;
+    letter-spacing: 3px;
+    text-align: center;
+    white-space: nowrap;
+    z-index: 50;
+    pointer-events: none;
+    display: none;
+  }
+
+  #messaggioPerso.show {
+    display: block;
+    animation: fadePerso 2s ease forwards;
+  }
+
+  @keyframes fadePerso {
+    0%   { opacity: 1; }
+    60%  { opacity: 1; }
+    100% { opacity: 0; }
+  }
 </style>
 </head>
 <body>
@@ -513,6 +542,9 @@
     <button id="rigiocaBtn" onclick="rigioca()">RIGIOCA</button>
   </div>
 
+  <!-- MESSAGGIO PANINO PERSO -->
+  <div id="messaggioPerso"></div>
+
   <!-- TOUCH CONTROLS -->
   <div id="touchControls">
     <div class="touchBtn" id="btnLeft">◀</div>
@@ -555,6 +587,7 @@ let lastFireTime = 0;
 let animId = null;
 let fireTimerId = null;
 let tubeAngle = 0;
+let isMostrandoMessaggio = false;
 
 // Audio context for beep
 let audioCtx = null;
@@ -761,8 +794,8 @@ function gameLoop(now) {
     s.el.style.left = s.x + 'px';
     s.el.style.top  = s.y + 'px';
 
-    // off top — panino scappato: game over
-    if (s.y < -50) { triggerGameOver(); return; }
+    // off top — panino scappato: messaggio non bloccante
+    if (s.y < -50) { mostraMessaggioPerso(); toRemove.push(i); continue; }
 
     // eat check
     const dx = Math.abs(s.x - uziCenterX);
@@ -783,6 +816,21 @@ function gameLoop(now) {
   }
 
   animId = requestAnimationFrame(gameLoop);
+}
+
+// ─── MESSAGGIO PANINO PERSO ──────────────────────────────────────────────────
+function mostraMessaggioPerso() {
+  if (isMostrandoMessaggio) return;
+  isMostrandoMessaggio = true;
+  const el = document.getElementById('messaggioPerso');
+  el.textContent = (personaggioScelto ? personaggioScelto.nome : 'UZI') + ' HAI PERSO';
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+  setTimeout(() => {
+    el.classList.remove('show');
+    isMostrandoMessaggio = false;
+  }, 2000);
 }
 
 // ─── GAME OVER ───────────────────────────────────────────────────────────────
