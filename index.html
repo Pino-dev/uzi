@@ -286,13 +286,145 @@
   }
 
   .touchBtn:active { background: rgba(255,255,255,0.35); }
+
+  /* CHARACTER SELECT */
+  #charSelect {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(16px, 4vh, 36px);
+    z-index: 150;
+    background: linear-gradient(135deg, #1a0a2e 0%, #16213e 50%, #0f3460 100%);
+    transition: opacity 0.4s ease;
+  }
+
+  #charSelect.fadeOut {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .charTitle {
+    font-size: clamp(16px, 5vw, 40px);
+    font-weight: 900;
+    color: #e94560;
+    text-shadow: 0 0 20px #e94560, 0 0 40px #e94560;
+    letter-spacing: 3px;
+    text-align: center;
+    padding: 0 20px;
+  }
+
+  .charGrid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(14px, 3vw, 28px);
+    justify-content: center;
+    padding: 0 20px;
+  }
+
+  .charCard {
+    width: clamp(110px, 22vw, 170px);
+    background: rgba(255,255,255,0.05);
+    border: 3px solid rgba(255,255,255,0.15);
+    border-radius: 16px;
+    padding: 18px 14px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    position: relative;
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s, transform 0.1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .charCard:hover {
+    border-color: #00ff88;
+    box-shadow: 0 0 20px rgba(0,255,136,0.3);
+    transform: scale(1.05);
+  }
+
+  .charCard.selected {
+    border-color: #00ff88;
+    border-width: 4px;
+    background: rgba(0,255,136,0.08);
+    box-shadow: 0 0 30px rgba(0,255,136,0.45);
+  }
+
+  .charCard img {
+    width: 75%;
+    aspect-ratio: 1;
+    object-fit: contain;
+    border-radius: 8px;
+  }
+
+  .charName {
+    font-size: clamp(14px, 3.5vw, 20px);
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: 2px;
+  }
+
+  .charCheckmark {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 26px;
+    height: 26px;
+    background: #00ff88;
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: #000;
+    font-weight: 900;
+  }
+
+  .charCard.selected .charCheckmark { display: flex; }
+
+  #playBtn {
+    padding: 14px 56px;
+    font-size: clamp(18px, 5vw, 30px);
+    font-weight: 900;
+    color: #fff;
+    background: linear-gradient(135deg, #e94560, #7b2ff7);
+    border: none;
+    border-radius: 50px;
+    letter-spacing: 3px;
+    box-shadow: 0 0 30px rgba(233,69,96,0.6);
+    transition: transform 0.1s, box-shadow 0.1s, opacity 0.2s;
+    opacity: 0.3;
+    pointer-events: none;
+    cursor: default;
+  }
+
+  #playBtn.active {
+    opacity: 1;
+    pointer-events: all;
+    cursor: pointer;
+  }
+
+  #playBtn.active:hover {
+    transform: scale(1.08);
+    box-shadow: 0 0 50px rgba(233,69,96,0.9);
+  }
 </style>
 </head>
 <body>
 
 <div id="gameContainer">
+  <!-- CHARACTER SELECT -->
+  <div id="charSelect">
+    <div class="charTitle">SCEGLI IL TUO PERSONAGGIO</div>
+    <div class="charGrid" id="charGrid"></div>
+    <button id="playBtn" onclick="avviaGioco()">GIOCA!</button>
+  </div>
+
   <!-- COUNTDOWN -->
-  <div id="countdown">
+  <div id="countdown" style="display:none">
     <div id="countdownNum">3</div>
   </div>
 
@@ -300,7 +432,7 @@
   <div id="hud">🥪 <span id="score">0</span> / 10</div>
 
   <!-- UZI FACE -->
-  <img id="uzi" src="uzi-chiusa.png" alt="Uzi">
+  <img id="uzi" src="" alt="Uzi">
 
   <!-- TUBE -->
   <div id="tube">
@@ -325,6 +457,13 @@
 </div>
 
 <script>
+// ─── PERSONAGGI ──────────────────────────────────────────────────────────────
+const personaggi = [
+  { nome: "UZI",  chiusa: "uzi-chiusa.png",  aperta: "uzi-aperta.png"  },
+  { nome: "ICIO", chiusa: "icio-chiusa.png",  aperta: "icio-aperta.png" }
+];
+let personaggioScelto = null;
+
 // ─── STATE ─────────────────────────────────────────────────────────────────
 const SPEED         = 6;
 const FIRE_INTERVAL = 1200;
@@ -389,6 +528,45 @@ const uziEl       = document.getElementById('uzi');
 const tubeEl      = document.getElementById('tube');
 const winOverlay  = document.getElementById('winOverlay');
 
+// ─── CHARACTER SELECT ────────────────────────────────────────────────────────
+function buildCharSelect() {
+  const grid = document.getElementById('charGrid');
+  grid.innerHTML = '';
+  personaggi.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'charCard';
+    card.innerHTML = `
+      <div class="charCheckmark">✓</div>
+      <img src="${p.chiusa}" alt="${p.nome}">
+      <div class="charName">${p.nome}</div>`;
+    card.addEventListener('click',       () => selezionaPersonaggio(p, card));
+    card.addEventListener('touchend', e => { e.preventDefault(); selezionaPersonaggio(p, card); });
+    grid.appendChild(card);
+  });
+  document.getElementById('charSelect').style.display = 'flex';
+  document.getElementById('charSelect').style.opacity = '1';
+  document.getElementById('charSelect').classList.remove('fadeOut');
+  document.getElementById('playBtn').classList.remove('active');
+  personaggioScelto = null;
+}
+
+function selezionaPersonaggio(p, cardEl) {
+  personaggioScelto = p;
+  document.querySelectorAll('.charCard').forEach(c => c.classList.remove('selected'));
+  cardEl.classList.add('selected');
+  document.getElementById('playBtn').classList.add('active');
+}
+
+function avviaGioco() {
+  if (!personaggioScelto) return;
+  const sel = document.getElementById('charSelect');
+  sel.classList.add('fadeOut');
+  setTimeout(() => {
+    sel.style.display = 'none';
+    startCountdown();
+  }, 400);
+}
+
 // ─── COUNTDOWN ──────────────────────────────────────────────────────────────
 function startCountdown() {
   // reset game state
@@ -448,7 +626,7 @@ function beginGame() {
   uziEl.style.display = 'block';
   uziEl.style.left = uziX + 'px';
   uziEl.style.top  = uziY + 'px';
-  uziEl.src = 'uzi-chiusa.png';
+  uziEl.src = personaggioScelto.chiusa;
   updateTouchControls();
 
   tubeEl.style.display = 'block';
@@ -508,7 +686,7 @@ function gameLoop(now) {
     if (dy >= 0 && dy <= OPEN_DIST) { mouthOpen = true; break; }
   }
 
-  uziEl.src = mouthOpen ? 'uzi-aperta.png' : 'uzi-chiusa.png';
+  uziEl.src = mouthOpen ? personaggioScelto.aperta : personaggioScelto.chiusa;
 
   const toRemove = [];
 
@@ -547,7 +725,7 @@ function triggerWin() {
   gameRunning = false;
   sandwiches.forEach(s => s.el.remove());
   sandwiches = [];
-  uziEl.src = 'uzi-aperta.png';
+  uziEl.src = personaggioScelto.aperta;
 
   winOverlay.classList.add('show');
   spawnConfetti();
@@ -613,7 +791,7 @@ window.addEventListener('resize', () => {
 });
 
 // ─── START ───────────────────────────────────────────────────────────────────
-startCountdown();
+buildCharSelect();
 </script>
 </body>
 </html>
