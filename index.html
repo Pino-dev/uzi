@@ -476,27 +476,54 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-size: clamp(28px, 5vw, 48px);
-    font-weight: 900;
-    color: #ff3333;
-    text-shadow: 0 0 20px #ff3333, 0 0 40px #ff3333;
-    letter-spacing: 3px;
-    text-align: center;
-    white-space: nowrap;
-    z-index: 50;
-    pointer-events: none;
     display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 32px;
+    z-index: 150;
+    pointer-events: none;
   }
 
   #messaggioPerso.show {
-    display: block;
-    animation: fadePerso 2s ease forwards;
+    display: flex;
+    pointer-events: auto;
   }
 
-  @keyframes fadePerso {
-    0%   { opacity: 1; }
-    60%  { opacity: 1; }
-    100% { opacity: 0; }
+  .persoTesto {
+    font-size: clamp(28px, 7vw, 64px);
+    font-weight: 900;
+    color: #ff3333;
+    text-shadow: 0 0 20px #ff3333, 0 0 50px #ff3333;
+    letter-spacing: 4px;
+    text-align: center;
+    white-space: nowrap;
+    animation: apparisciPerso 0.4s ease forwards;
+  }
+
+  @keyframes apparisciPerso {
+    from { opacity: 0; transform: scale(0.4); }
+    to   { opacity: 1; transform: scale(1);   }
+  }
+
+  #persoRigiocaBtn {
+    display: none;
+    padding: 14px 50px;
+    font-size: clamp(18px, 4vw, 28px);
+    font-weight: 900;
+    color: #fff;
+    background: linear-gradient(135deg, #e94560, #7b2ff7);
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    letter-spacing: 2px;
+    box-shadow: 0 0 30px rgba(233,69,96,0.6);
+    transition: transform 0.1s, box-shadow 0.1s;
+    animation: fadeInBtn 0.4s ease forwards;
+  }
+
+  #persoRigiocaBtn:hover {
+    transform: scale(1.08);
+    box-shadow: 0 0 50px rgba(233,69,96,0.9);
   }
 </style>
 </head>
@@ -543,7 +570,10 @@
   </div>
 
   <!-- MESSAGGIO PANINO PERSO -->
-  <div id="messaggioPerso"></div>
+  <div id="messaggioPerso">
+    <div class="persoTesto" id="persoTesto"></div>
+    <button id="persoRigiocaBtn" onclick="rigioca()">RIGIOCA</button>
+  </div>
 
   <!-- TOUCH CONTROLS -->
   <div id="touchControls">
@@ -681,6 +711,9 @@ function startCountdown() {
 
   winOverlay.classList.remove('show');
   document.getElementById('gameOver').classList.remove('show');
+  document.getElementById('messaggioPerso').classList.remove('show');
+  document.getElementById('persoRigiocaBtn').style.display = 'none';
+  isMostrandoMessaggio = false;
   hudEl.style.display = 'none';
   tubeEl.style.display = 'none';
   uziEl.style.display = 'none';
@@ -794,8 +827,8 @@ function gameLoop(now) {
     s.el.style.left = s.x + 'px';
     s.el.style.top  = s.y + 'px';
 
-    // off top — panino scappato: messaggio non bloccante
-    if (s.y < -50) { mostraMessaggioPerso(); toRemove.push(i); continue; }
+    // off top — panino scappato: ferma il gioco
+    if (s.y < -50) { mostraMessaggioPerso(); return; }
 
     // eat check
     const dx = Math.abs(s.x - uziCenterX);
@@ -822,14 +855,29 @@ function gameLoop(now) {
 function mostraMessaggioPerso() {
   if (isMostrandoMessaggio) return;
   isMostrandoMessaggio = true;
-  const el = document.getElementById('messaggioPerso');
-  el.textContent = (personaggioScelto ? personaggioScelto.nome : 'UZI') + ' HAI PERSO';
-  el.classList.remove('show');
-  void el.offsetWidth;
-  el.classList.add('show');
+
+  // Ferma il gioco
+  gameRunning = false;
+  if (animId) { cancelAnimationFrame(animId); animId = null; }
+  sandwiches.forEach(s => s.el.remove());
+  sandwiches = [];
+
+  // Mostra testo con animazione
+  const testo = document.getElementById('persoTesto');
+  testo.textContent = (personaggioScelto ? personaggioScelto.nome : 'UZI') + ' HAI PERSO';
+  testo.style.animation = 'none';
+  void testo.offsetWidth;
+  testo.style.animation = '';
+
+  document.getElementById('messaggioPerso').classList.add('show');
+
+  // Pulsante RIGIOCA dopo 2 secondi
   setTimeout(() => {
-    el.classList.remove('show');
-    isMostrandoMessaggio = false;
+    const btn = document.getElementById('persoRigiocaBtn');
+    btn.style.animation = 'none';
+    void btn.offsetWidth;
+    btn.style.animation = '';
+    btn.style.display = 'block';
   }, 2000);
 }
 
@@ -855,6 +903,9 @@ function triggerGameOver() {
 
 function rigioca() {
   document.getElementById('gameOver').classList.remove('show');
+  document.getElementById('messaggioPerso').classList.remove('show');
+  document.getElementById('persoRigiocaBtn').style.display = 'none';
+  isMostrandoMessaggio = false;
   buildCharSelect();
 }
 
