@@ -2,7 +2,9 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>Uzi Sandwich Catcher</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -12,6 +14,7 @@
     overflow: hidden;
     font-family: 'Arial Black', Arial, sans-serif;
     user-select: none;
+    touch-action: none;
   }
 
   #gameContainer {
@@ -257,18 +260,20 @@
     width: 100%;
     display: none;
     justify-content: space-between;
-    padding: 0 30px;
+    padding: 0 20px;
     z-index: 20;
     pointer-events: none;
   }
 
   .touchBtn {
-    width: 80px;
-    height: 80px;
+    width: 70px;
+    height: 70px;
+    min-width: 60px;
+    min-height: 60px;
     border-radius: 50%;
     background: rgba(255,255,255,0.15);
     border: 3px solid rgba(255,255,255,0.4);
-    font-size: 36px;
+    font-size: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -281,10 +286,6 @@
   }
 
   .touchBtn:active { background: rgba(255,255,255,0.35); }
-
-  @media (pointer: coarse) {
-    #touchControls { display: flex; }
-  }
 </style>
 </head>
 <body>
@@ -325,14 +326,21 @@
 
 <script>
 // ─── STATE ─────────────────────────────────────────────────────────────────
-const SPEED      = 6;
-const SANDWICH_SPEED = 3.2;
+const SPEED         = 6;
 const FIRE_INTERVAL = 1200;
-const TUBE_SPEED = 1.4;
-const WIN_COUNT  = 10;
-const OPEN_DIST  = 80;
-const EAT_DIST   = 50;
-const UZI_W      = 80;
+const WIN_COUNT     = 10;
+const OPEN_DIST     = 80;
+const EAT_DIST      = 50;
+
+function isMobile()           { return window.innerWidth < 600; }
+function getUziW()            { return isMobile() ? 70 : 80; }
+function getSandwichSpeed()   { return isMobile() ? 2.2 : 3.2; }
+function getSandwichFontSize(){ return isMobile() ? '32px' : '38px'; }
+
+function updateTouchControls() {
+  document.getElementById('touchControls').style.display =
+    isMobile() ? 'flex' : 'none';
+}
 
 let uziX, uziY;
 let tubeX, tubeDir;
@@ -428,16 +436,20 @@ function beginGame() {
   const W = container.clientWidth;
   const H = container.clientHeight;
 
+  const UZI_W = getUziW();
   uziX = W / 2;
-  uziY = 30;
+  uziY = 60;
   tubeX = W / 2;
   tubeDir = 1;
   tubeAngle = 0;
 
+  uziEl.style.width  = UZI_W + 'px';
+  uziEl.style.height = UZI_W + 'px';
   uziEl.style.display = 'block';
   uziEl.style.left = uziX + 'px';
   uziEl.style.top  = uziY + 'px';
   uziEl.src = 'uzi-chiusa.png';
+  updateTouchControls();
 
   tubeEl.style.display = 'block';
   tubeEl.style.left = tubeX + 'px';
@@ -454,16 +466,19 @@ function spawnSandwich() {
   const el = document.createElement('div');
   el.className = 'sandwich';
   el.textContent = '🥪';
+  el.style.fontSize = getSandwichFontSize();
   container.appendChild(el);
-  sandwiches.push({ el, x: tubeX, y: container.clientHeight - 120 });
+  sandwiches.push({ el, x: tubeX, y: window.innerHeight - 120 });
 }
 
 // ─── GAME LOOP ───────────────────────────────────────────────────────────────
 function gameLoop(now) {
   if (!gameRunning) return;
 
-  const W = container.clientWidth;
-  const H = container.clientHeight;
+  const W = window.innerWidth;
+  const H = window.innerHeight;
+  const UZI_W = getUziW();
+  const SANDWICH_SPEED = getSandwichSpeed();
 
   // ── Move Uzi
   if (keys.left)  uziX -= SPEED;
@@ -484,7 +499,7 @@ function gameLoop(now) {
 
   // ── Move sandwiches, check collisions
   const uziCenterX = uziX;
-  const uziCenterY = uziY + UZI_W / 2;
+  const uziCenterY = uziY + UZI_W / 2;  // UZI_W already declared above
   let mouthOpen = false;
 
   // first pass: check proximity to decide mouth state
@@ -580,6 +595,22 @@ btnRight.addEventListener('touchend',   e => { keys.right = false; e.preventDefa
 btnRight.addEventListener('mousedown',  () => keys.right = true);
 btnRight.addEventListener('mouseup',    () => keys.right = false);
 btnRight.addEventListener('mouseleave', () => keys.right = false);
+
+// ─── PREVENT SCROLL ON TOUCH ─────────────────────────────────────────────────
+document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+
+// ─── RESIZE ───────────────────────────────────────────────────────────────────
+window.addEventListener('resize', () => {
+  const W = window.innerWidth;
+  const UZI_W = getUziW();
+  uziEl.style.width  = UZI_W + 'px';
+  uziEl.style.height = UZI_W + 'px';
+  if (gameRunning) {
+    uziX = Math.max(UZI_W / 2, Math.min(W - UZI_W / 2, uziX));
+    tubeX = Math.max(60, Math.min(W - 60, tubeX));
+  }
+  updateTouchControls();
+});
 
 // ─── START ───────────────────────────────────────────────────────────────────
 startCountdown();
